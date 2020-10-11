@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
         long_description = fh.read()
 
 setuptools.setup(
-    name="dstools", # Replace with your own username
+    name="ds_toolkit", # Replace with your own username
     version="0.0.1",
     author="Charlie Mueller",
     author_email="charles.mueller@rackspace.com",
