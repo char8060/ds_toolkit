@@ -215,6 +215,11 @@ def plot_strings(str_list,df_in):
 
 
 def dedupe(df_in):
+    '''
+    De-duplicate Pandas datafarme and print info
+    input: pandas dataframe
+    returns: de-duped pandas dataframe  
+    '''
     print('shape before de-dupe:{}'.format(df_in.shape))
     df_in_dedupe = df_in.drop_duplicates()
     print('shape after de-dupe:{}'.format(df_in_dedupe.shape))
@@ -222,17 +227,24 @@ def dedupe(df_in):
     return df_in_dedupe
 
 
-################
-##
-# Prints duplicates, null content of cols
-# inputs: df_in_: pandas dataframe
-# output: None
-##
-################
 def check_quality(df_in_):
+    '''
+    Data Quality checker for Pandas, prints duplicates, null content of cols
+    inputs: df_in_: pandas dataframe
+    returns: None
+    '''
     df_in = dedupe(df_in_)
     colz = df_in.columns
+
+    nulls_counts = []
     for col in colz:
         pct_null = df_in[col].isna().sum()*100./df_in.shape[0]
         if pct_null > 0:
-            print('{} is {:.1f}% NULL'.format(col, pct_null))
+            nulls_counts.append(('{} is {:.1f}% NULL'.format(col, pct_null),pct_null))
+
+    sorted_counts = sorted(nulls_counts,key=lambda x:x[1],reverse=True)
+    print('\n---- \n')
+    print('columns with null rows:')
+    for j in sorted_counts:
+        print(j[0])
+    
