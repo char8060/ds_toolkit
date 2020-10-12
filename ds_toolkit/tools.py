@@ -5,7 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 
 
-def rebin(pd_in, col, thresh, side='underflow'):
+def rebin(pd_in_, col, thresh, side='underflow'):
     '''
     Function that fills underflow/overflow bins for visualization
     
@@ -17,6 +17,8 @@ def rebin(pd_in, col, thresh, side='underflow'):
     returns:
         * : type = pandas series
     '''
+    #make a local copy to avoid altering original df
+    pd_in = pd_in_.copy(deep=True)
     
     #correct a bug in python where chained indexing warning gets confused so turn it off
     pd.options.mode.chained_assignment = None  # default='warn'
@@ -29,129 +31,110 @@ def rebin(pd_in, col, thresh, side='underflow'):
         print('need to specify underflow or overflow')
     return pd_in[col]
 
-def single_hist(df_in,col,title=None,nbins=30,norm=False,xlabel=None,ylabel=None,xrng=(0,0)):
+def hist_labeler(series_in,label_in=None):
+    '''
+    Formats histograms labels
+    inputs: pd series
+    returns: label string
+    '''
+    null_cnt = series_in.isna().sum()
+    entries = series_in.shape[0]
+    label = 'Entries {}\n$\mu$={:.4f}'.format(entries,series_in.mean())
+    if null_cnt	> 1:
+        label = '{} entries, {} ({:.1f}%) null\n$\mu$={:.4f}'.format(entries,null_cnt,null_cnt*100./entries,series_in.mean())
+        
+    if label_in:
+        label = '{} {}'.format(label_in,label)
+    return label
+
+def single_hist(df_in_,col,title=None,xlabel=None,ylabel=None,xrng=None,**kwargs):
+    '''
+    Plot Single histogram
+    Usage example: single_hist(df,'support_lag1_ratio',bins=60,kde=False,xrng=(0.75,1.5))
+    '''
+    #make a local copy to avoid altering the original
+    df_in = df_in_.copy(deep=True)
     
-    if xrng != (0,0):
+    if xrng != None:
         df_in[col] = rebin(df_in,col,xrng[0],'underflow')
         df_in[col] = rebin(df_in,col,xrng[1],'overflow')
     
+
+    hist_label = hist_labeler(df_in[col])
     
     plt.rc('font', family='serif')
     f,ax = plt.subplots(figsize=(10,5))
     ax.grid()
-    hist_label = 'Entries {}\n$\mu$={:.4f}'.format(df_in.shape[0],df_in[col].mean())
-    sns.distplot(df_in[col],bins=nbins,norm_hist=norm,kde=False,color='green',label=hist_label)#,hist_kws={'weights':plot_df['mrr']})
+
+    sns.distplot(df_in[col],label=hist_label,**kwargs)
     plt.title(title)
     plt.legend(loc='best',fontsize=10)
     if xlabel:
         ax.set_xlabel(xlabel)
+
+
+
         
-def plot_2dists(df1,df2,var_in,label1, label2,n_bins=30,xrng=(0,0)):
+def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs):
     '''
     inputs: df1 type=pd
             df2 type=p2
-            var_in type=string desc: column in both df1,df2 to be plotted
+            col1 type=string desc: column to be plotted in df1
+            col2 type=string desc: column to be plotted in df2
             label1 type=string desc: label for df1
             label2 type=string desc: label for df2
             n_bins type=int desc: number of bins in output hist
     outputs: none, produces normalized histogram of var_in of df1 and df2 on same axis
 
     '''
+
+    #change local copies only
+    df1 = df1_.copy(deep=True)
+    df2 = df2_.copy(deep=True)
+    
+    
     plt.rc('font', family='serif')
     f,ax = plt.subplots(figsize=(10,5))
     #ax.grid()
 
-    if xrng[0]==0. and xrng[1]==0.:
+    if xrng is None:
         #set axis limits
-        xmin = 0
-        xmax = 0
-        if df1[var_in].min() < df2[var_in].min():
-            xmin = df1[var_in].min()
-        else:
-            xmin = df2[var_in].min()
+        xmin = df2[col2].min()
+        xmax = df1[col1].max()
+        if df1[col1].min() < df2[col2].min():
+            xmin = df1[col1].min()
+            
+        if df1[col1].max() < df2[col2].max():
+            xmax = df2[col2].max()
 
-        if df1[var_in].max() < df2[var_in].max():
-            xmax = df2[var_in].max()
-        else:
-            xmax = df1[var_in].max()
         xrnge = (xmin, xmax*1.01)
     else:
         xrnge = xrng
 
     #plotting
-    nbins=n_bins
-    hist=True
-    plt_kde=False
-    hist_label1 = '{}, Entries {}'.format(label1,df1.shape[0])
-    hist_label2 = '{}, Entries {}'.format(label2,df2.shape[0])
-    line_color1 = 'blue'
-    line_color2 = 'red'
+    if not label1:
+        label1=col1
+    if not label2:
+        label2=col2
+
+    hist_label1 = hist_labeler(df1[col1],label1)
+    hist_label2 = hist_labeler(df2[col2],label2)
+
+    #stop here
+    df1[col1] = rebin(df1,col1,xrnge[0],'underflow')
+    df1[col1] = rebin(df1,col1,xrnge[1],'overflow')
+    df2[col2] = rebin(df2,col2,xrnge[0],'underflow')
+    df2[col2] = rebin(df2,col2,xrnge[1],'overflow')    
     
-    df1[var_in] = rebin(df1,var_in,xrnge[0],'underflow')
-    df1[var_in] = rebin(df1,var_in,xrnge[1],'overflow')
-    df2[var_in] = rebin(df2,var_in,xrnge[0],'underflow')
-    df2[var_in] = rebin(df2,var_in,xrnge[1],'overflow')    
-    
-    sns.distplot(df1[var_in],bins=nbins,norm_hist=hist,kde=plt_kde,color=line_color1,label=hist_label1,hist_kws={"range":(xrnge[0],xrnge[1])})
-    sns.distplot(df2[var_in],bins=nbins,norm_hist=hist,kde=plt_kde,color=line_color2,label=hist_label2,hist_kws={"range":(xrnge[0],xrnge[1])})
+    sns.distplot(df1[col1],label=hist_label1,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
+    sns.distplot(df2[col2],label=hist_label2,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
 
     plt.grid()
     plt.legend(loc='best',fontsize=10)
     ax.set_xlim(xrnge[0],xrnge[1])
-    ax.set(xlabel=var_in, ylabel='normalized counts')
+    ax.set(xlabel=col1, ylabel='counts')
     plt.show()
 
-
-def plot_2dists_v2(df1,df2,label1, label2,n_bins=30,xrng=(0,0)):
-    '''
-    inputs: df1 type=pd
-            df2 type=pd
-            label1 type=string desc: label for df1
-            label2 type=string desc: label for df2
-            n_bins type=int desc: number of bins in output hist
-    outputs: none, produces normalized histogram of df1 and df2 on same axis
-
-    '''
-    plt.rc('font', family='serif')
-    f,ax = plt.subplots(figsize=(10,5))
-    ax.grid()
-    #ax.set_xlim(None,20)
-
-    if xrng[0]==0. and xrng[1]==0.:
-        #set axis limits
-        xmin = 0
-        xmax = 0
-        if df1[label1].min() < df2[label2].min():
-            xmin = df1[label1].min()
-        else:
-            xmin = df2[label2].min()
-
-        if df1[label1].max() < df2[label2].max():
-            xmax = df2[label2].max()
-        else:
-            xmax = df1[label1].max()
-        xrnge = (xmin, xmax*1.01)
-    else:
-        xrnge = xrng
-
-    #plotting
-    nbins=n_bins
-    hist=True
-    plt_kde=True
-    hist_label1 = '{}, Entries {}'.format(label1,df1.shape[0])
-    hist_label2 = '{}, Entries {}'.format(label2,df2.shape[0])
-    line_color1 = 'blue'
-    line_color2 = 'red'
-    sns.distplot(df1[label1],bins=nbins,norm_hist=hist,kde=plt_kde,color=line_color1,label=hist_label1,hist_kws={"range":(xrnge[0],xrnge[1])})
-    sns.distplot(df2[label2],bins=nbins,norm_hist=hist,kde=plt_kde,color=line_color2,label=hist_label2,hist_kws={"range":(xrnge[0],xrnge[1])})
-
-    plt.legend(loc='best',fontsize=20)
-    ax.set_xlim(xrnge[0],xrnge[1])
-    ax.set(xlabel=label1, ylabel='normalized counts')
-    ax.grid()
-    plt.show()
-
-    
 
 def correlation_plot(X_in,features,title_txt = ''):
     scaler = MinMaxScaler()
