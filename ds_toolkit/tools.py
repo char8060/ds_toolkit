@@ -3,33 +3,41 @@ import matplotlib.ticker as plticker
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+import numpy as np
 
 
-def rebin(pd_in_, col, thresh, side='underflow'):
+def rebin(series_, thresh, side='underflow',percentile=False):
     '''
     Function that fills underflow/overflow bins for visualization
     
     args:
-        * pd_in : pandas data frame : type = pandas dataframe
-        * col : column name to be altered : type = string
+        * series_ : data structure to be rebinned : type = pandas series 
         * thresh : threshold : type = int or float
         * side : which bin (underflow or overflow) to put values : type = string
+        * percentile: determines whether thresh is interpreted as percentile or in units of series : type bool
     returns:
         * : type = pandas series
     '''
-    #make a local copy to avoid altering original df
-    pd_in = pd_in_.copy(deep=True)
+    #make a local copy to avoid altering original series
+    series = series_.copy(deep=True)
     
     #correct a bug in python where chained indexing warning gets confused so turn it off
     pd.options.mode.chained_assignment = None  # default='warn'
 
+    #redefine threshold based on percentile
+    pct = thresh
+    if percentile:
+        thresh = np.nanpercentile(series,thresh)
+        print('{} percentile is: {}'.format(pct,thresh))
+    
+    
     if side is 'underflow':
-        pd_in.loc[pd_in[col] <= thresh, col] = thresh
+        series.loc[series <= thresh] = thresh
     elif side is 'overflow':
-        pd_in.loc[pd_in[col] >= thresh, col] = thresh
+        series.loc[series >= thresh] = thresh
     else:
         print('need to specify underflow or overflow')
-    return pd_in[col]
+    return series
 
 def hist_labeler(series_in,label_in=None):
     '''
@@ -54,11 +62,16 @@ def single_hist(df_in_,col,title=None,xlabel=None,ylabel=None,xrng=None,**kwargs
     '''
     #make a local copy to avoid altering the original
     df_in = df_in_.copy(deep=True)
+
+    #treatment of infs
+    df_in[col] = df_in[col].replace([np.inf, -np.inf], np.nan)
     
-    if xrng != None:
-        df_in[col] = rebin(df_in,col,xrng[0],'underflow')
-        df_in[col] = rebin(df_in,col,xrng[1],'overflow')
-    
+    if xrng:
+        df_in[col] = rebin(df_in[col],xrng[0],'underflow')
+        df_in[col] = rebin(df_in[col],xrng[1],'overflow')
+    else:
+        df_in[col] = rebin(df_in[col],99,'overflow',percentile=True)
+        df_in[col] = rebin(df_in[col],1,'underflow',percentile=True)
 
     hist_label = hist_labeler(df_in[col])
     
@@ -121,10 +134,10 @@ def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs)
     hist_label2 = hist_labeler(df2[col2],label2)
 
     #stop here
-    df1[col1] = rebin(df1,col1,xrnge[0],'underflow')
-    df1[col1] = rebin(df1,col1,xrnge[1],'overflow')
-    df2[col2] = rebin(df2,col2,xrnge[0],'underflow')
-    df2[col2] = rebin(df2,col2,xrnge[1],'overflow')    
+    df1[col1] = rebin(df1[col1],xrnge[0],'underflow')
+    df1[col1] = rebin(df1[col1],xrnge[1],'overflow')
+    df2[col2] = rebin(df2[col2],xrnge[0],'underflow')
+    df2[col2] = rebin(df2[col2],xrnge[1],'overflow')    
     
     sns.distplot(df1[col1],label=hist_label1,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
     sns.distplot(df2[col2],label=hist_label2,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
