@@ -18,18 +18,18 @@ def rebin(series_, thresh, side='underflow',percentile=False):
     returns:
         * : type = pandas series
     '''
-    #make a local copy to avoid altering original series
-    series = series_.copy(deep=True)
-    
     #correct a bug in python where chained indexing warning gets confused so turn it off
     pd.options.mode.chained_assignment = None  # default='warn'
-
+    
+    #make a local copy
+    series = series_.copy(deep=True)
+    
     #redefine threshold based on percentile
     pct = thresh
     if percentile:
         thresh = np.nanpercentile(series,thresh)
-        print('{} percentile is: {}'.format(pct,thresh))
-    
+        #z-score filtering could be useful later
+        #z_score = (thresh - series.mean()) / series.std(ddof=0)
     
     if side is 'underflow':
         series.loc[series <= thresh] = thresh
