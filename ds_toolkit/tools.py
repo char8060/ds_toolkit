@@ -25,7 +25,6 @@ def rebin(series_, thresh, side='underflow',percentile=False):
     series = series_.copy(deep=True)
     
     #redefine threshold based on percentile
-    pct = thresh
     if percentile:
         thresh = np.nanpercentile(series,thresh)
         #z-score filtering could be useful later
@@ -38,6 +37,8 @@ def rebin(series_, thresh, side='underflow',percentile=False):
     else:
         print('need to specify underflow or overflow')
     return series
+
+
 
 def hist_labeler(series_in,label_in=None):
     '''
@@ -105,12 +106,20 @@ def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs)
     df1 = df1_.copy(deep=True)
     df2 = df2_.copy(deep=True)
     
+    #treatment of infs
+    df1[col1] = df1[col1].replace([np.inf, -np.inf], np.nan)
+    df2[col2] = df2[col2].replace([np.inf, -np.inf], np.nan)
     
     plt.rc('font', family='serif')
     f,ax = plt.subplots(figsize=(10,5))
     #ax.grid()
 
     if xrng is None:
+        df1[col1] = rebin(df1[col1],99,'overflow',percentile=True)
+        df1[col1] = rebin(df1[col1],1,'underflow',percentile=True)
+        df2[col2] = rebin(df2[col2],99,'overflow',percentile=True)
+        df2[col2] = rebin(df2[col2],1,'underflow',percentile=True)        
+        
         #set axis limits
         xmin = df2[col2].min()
         xmax = df1[col1].max()
