@@ -219,6 +219,29 @@ def plot_strings(str_list,df_in):
             print('ERROR plotting {}, exception={}'.format(plot,e))
 
 
+            
+def plot_importance(importances,feats):
+    '''
+    Plot feature importances
+    inputs:
+        * importances : feature importances : type=array
+        * features : features list : type=list
+    returns: None
+    '''
+    sorted_idx = importances.argsort()
+    sorted_feats = np.asarray(feats)
+
+    y_ticks = np.arange(0, len(feats))
+    fig, ax = plt.subplots()
+    ax.barh(y_ticks, importances[sorted_idx])
+
+    ax.set_yticklabels(sorted_feats[sorted_idx])
+    ax.set_yticks(y_ticks)
+    ax.set_title("Feature Importances")
+    fig.tight_layout()
+    ax.grid()
+    plt.show()
+            
 def dedupe(df_in):
     '''
     De-duplicate Pandas datafarme and print info
