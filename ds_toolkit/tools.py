@@ -114,6 +114,16 @@ def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs)
     f,ax = plt.subplots(figsize=(10,5))
     #ax.grid()
 
+    
+    #plotting
+    if not label1:
+        label1=col1
+    if not label2:
+        label2=col2
+
+    hist_label1 = hist_labeler(df1[col1],label1)
+    hist_label2 = hist_labeler(df2[col2],label2)
+    
     if xrng is None:
         df1[col1] = rebin(df1[col1],99,'overflow',percentile=True)
         df1[col1] = rebin(df1[col1],1,'underflow',percentile=True)
@@ -133,14 +143,6 @@ def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs)
     else:
         xrnge = xrng
 
-    #plotting
-    if not label1:
-        label1=col1
-    if not label2:
-        label2=col2
-
-    hist_label1 = hist_labeler(df1[col1],label1)
-    hist_label2 = hist_labeler(df2[col2],label2)
 
     #stop here
     df1[col1] = rebin(df1[col1],xrnge[0],'underflow')
