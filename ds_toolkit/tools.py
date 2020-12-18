@@ -143,12 +143,10 @@ def plot_2dists(df1_,df2_,col1,col2,label1=None, label2=None,xrng=None,**kwargs)
     else:
         xrnge = xrng
 
-
-    #stop here
-    df1[col1] = rebin(df1[col1],xrnge[0],'underflow')
-    df1[col1] = rebin(df1[col1],xrnge[1],'overflow')
-    df2[col2] = rebin(df2[col2],xrnge[0],'underflow')
-    df2[col2] = rebin(df2[col2],xrnge[1],'overflow')    
+        df1[col1] = rebin(df1[col1],xrnge[0],'underflow')
+        df1[col1] = rebin(df1[col1],xrnge[1],'overflow')
+        df2[col2] = rebin(df2[col2],xrnge[0],'underflow')
+        df2[col2] = rebin(df2[col2],xrnge[1],'overflow')    
     
     sns.distplot(df1[col1],label=hist_label1,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
     sns.distplot(df2[col2],label=hist_label2,hist_kws={"range":(xrnge[0],xrnge[1])},**kwargs)
