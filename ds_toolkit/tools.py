@@ -204,14 +204,18 @@ def plt_timeseries(var,timevar,df,title):
 # Plots categorical values directly from pandas
 # inputs: str_list: list of pandas columns to plot
 #         df_in: pandas dataframe
+#         top_n: integer, plots top_n values with highest counts
 # output: None
 ##
 ################
-def plot_strings(str_list,df_in):
-
+def plot_strings(str_list,df_in,top_n=20):
+    plt.rc('font', family='serif')
     for plot in str_list:
         try:
-            df_in[plot].hist(xrot=90)
+            f,ax = plt.subplots(figsize=(10,5))
+            topn_lst = list(df_in[plot].value_counts()[:top_n].index)
+            df_plot = df_in[df_in[plot].isin(topn_lst)]
+            df_plot[plot].hist(xrot=90)
             plt.ylabel('counts')
             plt.title(plot)
             plt.show()
