@@ -215,9 +215,9 @@ def plot_strings(str_list,df_in,top_n=20):
             f,ax = plt.subplots(figsize=(10,5))
             topn_lst = list(df_in[plot].value_counts()[:top_n].index)
             df_plot = df_in[df_in[plot].isin(topn_lst)]
-            df_plot[plot].hist(xrot=90)
+            df_plot[plot].value_counts(sort=True).plot.bar(title=plot,rot=90)
             plt.ylabel('counts')
-            plt.title(plot)
+            plt.grid()
             plt.show()
         except Exception as e:
             print('ERROR plotting {}, exception={}'.format(plot,e))
