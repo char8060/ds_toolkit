@@ -72,3 +72,41 @@ def fetch_data(source_type='table', #or 'csv', or 'query'
     #logger.debug('Done fetching data')
     print('done fetching data')
     return dataframe
+
+
+def upload2gcs(pd_data,
+               bucket_name='rax-datascience-dev',
+               path='cmueller/test',
+               filename='myfile'
+           ):
+    '''
+    Uploads data to GCS
+    param pd_data: - the data to be uploaded
+    type pd_data: pandas dataframe
+    param bucket_name: the GCS bucket where the file will be uploaded
+    type bucket_name: str
+    param path: the path to the file (DO NOT add leading or trailing '/')
+    type path: str
+    param filename: the file name (without extension)
+    type filename: str
+    '''
+    from datetime import datetime
+    from google.cloud import storage
+    from google.cloud.storage.blob import Blob
+    
+    persist_time = str(datetime.utcnow())
+    fn = f'{filename}_{persist_time}.csv.gz'.replace(' ','_')
+    
+    print('saving file locally...')
+    pd_data.to_csv(fn,compression='gzip')
+
+    blb = f'{path}/{fn}'
+    gcs = storage.Client()
+    
+    print(f'getting bucket: {bucket_name}')
+    bucket = gcs.get_bucket(bucket_name)
+    blob = bucket.blob(blb)
+    print('uploading blob....')
+    blob.upload_from_filename(fn)
+    print(f'uploaded file: {blob.public_url}')
+    return
