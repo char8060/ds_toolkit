@@ -1,6 +1,6 @@
 import pandas as pd
 
-def fetch_data(source_type='table', #or 'csv', or 'query'
+def fetch_data(source_type='file',
                source_name='ospc_churn_dev.features'
                ):
     '''
@@ -65,9 +65,16 @@ def fetch_data(source_type='table', #or 'csv', or 'query'
         bqclient = bigquery.Client(credentials=credentials, project=my_project_id)
         dataframe = bqclient.query(source_name).result().to_dataframe(bqstorage_client=bqstorageclient)
 
-    elif source_type == 'csv':
-        dataframe = pd.read_csv(source_name)
-
+    elif source_type == 'file':
+        if '.csv' in source_name:
+            dataframe = pd.read_csv(source_name)
+        elif '.pkl' in source_name:
+            dataframe = pd.read_pickle(source_name)
+        elif '.json' in source_name:
+            dataframe = pd.read_json(source_name)
+        else:
+            print(f'{source_name} is not a valid filetype. valid file types: csv, pkl, json')
+            return
         
     #logger.debug('Done fetching data')
     print('done fetching data')
@@ -77,7 +84,7 @@ def fetch_data(source_type='table', #or 'csv', or 'query'
 def upload2gcs(pd_data,
                bucket_name='rax-datascience-dev',
                path='cmueller/test',
-               filename='myfile'
+               filename='myfile.pkl'
            ):
     '''
     Uploads data to GCS
@@ -87,7 +94,7 @@ def upload2gcs(pd_data,
     type bucket_name: str
     param path: the path to the file (DO NOT add leading or trailing '/')
     type path: str
-    param filename: the file name (without extension)
+    param filename: the file name (with extension csv, pkl, json)
     type filename: str
     '''
     from datetime import datetime
@@ -95,11 +102,20 @@ def upload2gcs(pd_data,
     from google.cloud.storage.blob import Blob
     
     persist_time = str(datetime.utcnow())
-    fn = f'{filename}_{persist_time}.csv.gz'.replace(' ','_')
     
     print('saving file locally...')
-    pd_data.to_csv(fn,compression='gzip')
-
+    fn = f'f{persist_time}_{filename}'.replace(' ','_').replace(':','_')
+    
+    if '.csv' in filename:
+        pd_data.to_csv(fn,compression='gzip')
+    elif '.pkl' in filename:
+        pd_data.to_pickle(fn)
+    elif '.json' in filename:
+        pd_data.to_json(fn)
+    else:
+        print('Invalid file type. Valid file types: [csv, pkl, json]')
+        return
+  
     blb = f'{path}/{fn}'
     gcs = storage.Client()
     
