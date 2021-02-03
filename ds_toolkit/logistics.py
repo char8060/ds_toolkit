@@ -8,12 +8,12 @@ def fetch_data(source_type='file',
     INPUTS:
        -- source_type
           type: str
-          desc: ['table','query','csv'] Tells the source type
+          desc: ['table','query','file'] Tells the source type
        -- source_name
           type: str
           desc: ['bq_dataset.bq_table' if source_type = 'table',
                   BQ query if source_type = query,
-                  'filename.csv' if source_type = 'csv ]
+                  'filename<.csv, .json, .pkl>' if source_type = 'file' ]
     RETURNS:
       -- dataframe
          type: pandas df
