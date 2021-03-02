@@ -202,7 +202,7 @@ def plt_timeseries(var,timevar,df,title):
 ################
 ##
 # Plots categorical values directly from pandas
-# inputs: str_list: list of pandas columns to plot
+# inputs: str_list: list of strings - pandas columns to plot
 #         df_in: pandas dataframe
 #         top_n: integer, plots top_n values with highest counts
 # output: None

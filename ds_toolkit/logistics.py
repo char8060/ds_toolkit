@@ -126,3 +126,44 @@ def upload2gcs(pd_data,
     blob.upload_from_filename(fn)
     print(f'uploaded file: {blob.public_url}')
     return
+
+
+def upload2bq(dataset=None,
+              table=None,
+              df_in=None):
+    '''
+    Upload model predictions to BigQuery table
+    
+    param dataset: bq dataset where table will be uploaded
+    type dataset: string
+    
+    param table: bq table name where results will be uploaded
+    type table: string
+    
+    param df_in: input data that will be uploaded
+    type df_in: pandas dataframe
+    
+    RETURNS: None
+    '''
+    from datetime import datetime
+    from google.cloud import bigquery
+        
+    client = bigquery.Client()
+    table_id = '{}.{}'.format(dataset,table)
+
+    upload_df = df_in.copy(deep=True)
+    exec_time = str(datetime.utcnow())
+    upload_df['updated_on'] = exec_time
+    upload_df['updated_by'] = 'char8060'
+        
+    # Since string columns use the "object" dtype, pass in a (partial) schema
+    # to ensure the correct BigQuery data type.
+    schema_=[]
+    for col_name,col_dtype in zip(upload_df.columns,upload_df.dtypes):
+        if col_dtype == 'object':
+            schema_.append(bigquery.SchemaField(col_name, "STRING"))
+    job_config = bigquery.LoadJobConfig(shema=schema_)
+        
+    job = client.load_table_from_dataframe(upload_df, table_id, job_config=job_config)
+    print(job.result())
+    return
